@@ -20,8 +20,7 @@ const COLORS = [
 ];
 
 const BALL_COLOR = 0x222222;
-const POWERUP_COLOR = 0xffd700; // Gold - spawn ball
-const FREEZE_POWERUP_COLOR = 0x00ffff; // Cyan - freeze others
+const POWERUP_COLOR = 0xffd700; // Gold
 
 const COLOR_NAMES = ['Cream', 'Teal', 'Coral', 'Sage', 'Purple', 'Pink', 'Sky', 'Yellow'];
 const COLOR_HEX = ['#e8e4df', '#3d5a6c', '#e07a5f', '#81b29a', '#9b5de5', '#f15bb5', '#00bbf9', '#fee440'];
@@ -125,7 +124,7 @@ const powerupMaterial = new THREE.MeshBasicMaterial({
     map: createPowerupTexture('#ffd700', '+')
 });
 const freezePowerupMaterial = new THREE.MeshBasicMaterial({
-    map: createPowerupTexture('#00ffff', '||')
+    map: createPowerupTexture('#ffd700', '||')
 });
 
 // Geometries
