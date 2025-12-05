@@ -3,6 +3,7 @@ const teamsSlider = document.getElementById('teamsSlider');
 const teamsValue = document.getElementById('teamsValue');
 const powerupsCheckbox = document.getElementById('powerups');
 const powerupIntervalInput = document.getElementById('powerupInterval');
+const sfxCheckbox = document.getElementById('sfx');
 const resetButton = document.getElementById('reset');
 const scoresDiv = document.getElementById('scores');
 
@@ -46,7 +47,7 @@ function initAudio() {
 }
 
 function playHitSound() {
-    if (!audioContext) return;
+    if (!audioContext || !sfxCheckbox.checked) return;
 
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
