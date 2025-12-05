@@ -3,6 +3,7 @@
 credentials.json
 *.geojson
 *.json
+!vercel.json
 
 graphs 
 cache
