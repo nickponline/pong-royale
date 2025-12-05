@@ -1,23 +1,28 @@
 const container = document.getElementById('container');
-const fourSidedCheckbox = document.getElementById('fourSided');
+const teamsSlider = document.getElementById('teamsSlider');
+const teamsValue = document.getElementById('teamsValue');
 const powerupsCheckbox = document.getElementById('powerups');
 const powerupIntervalInput = document.getElementById('powerupInterval');
 const resetButton = document.getElementById('reset');
 const scoresDiv = document.getElementById('scores');
 
-// Colors - 4 distinct colors for 4-sided mode
+// Colors - 8 distinct colors
 const COLORS = [
-    0xe8e4df,   // 0: Cream/off-white (left)
-    0x3d5a6c,   // 1: Teal/dark blue (right)
-    0xe07a5f,   // 2: Terracotta/coral (top)
-    0x81b29a    // 3: Sage green (bottom)
+    0xe8e4df,   // 0: Cream/off-white
+    0x3d5a6c,   // 1: Teal/dark blue
+    0xe07a5f,   // 2: Terracotta/coral
+    0x81b29a,   // 3: Sage green
+    0x9b5de5,   // 4: Purple
+    0xf15bb5,   // 5: Pink
+    0x00bbf9,   // 6: Sky blue
+    0xfee440    // 7: Yellow
 ];
 
 const BALL_COLOR = 0x222222;
 const POWERUP_COLOR = 0xffd700; // Gold
 
-const COLOR_NAMES = ['Cream', 'Teal', 'Coral', 'Sage'];
-const COLOR_HEX = ['#e8e4df', '#3d5a6c', '#e07a5f', '#81b29a'];
+const COLOR_NAMES = ['Cream', 'Teal', 'Coral', 'Sage', 'Purple', 'Pink', 'Sky', 'Yellow'];
+const COLOR_HEX = ['#e8e4df', '#3d5a6c', '#e07a5f', '#81b29a', '#9b5de5', '#f15bb5', '#00bbf9', '#fee440'];
 
 // Game settings
 const CANVAS_SIZE = 600;
@@ -26,7 +31,7 @@ const CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
 const BALL_RADIUS = 8;
 const BALL_SPEED = 4;
 
-let fourSidedMode = false;
+let numTeams = 2;
 let powerupsEnabled = false;
 let powerupTimer = null;
 let powerups = []; // [{ cellX, cellY, mesh }, ...]
@@ -68,28 +73,19 @@ function initGrid() {
     cellMeshes = [];
 
     grid = [];
-    fourSidedMode = fourSidedCheckbox.checked;
+    numTeams = parseInt(teamsSlider.value, 10);
 
     for (let y = 0; y < GRID_SIZE; y++) {
         grid[y] = [];
         cellMeshes[y] = [];
         for (let x = 0; x < GRID_SIZE; x++) {
-            let teamIndex;
-            if (fourSidedMode) {
-                const isLeft = x < GRID_SIZE / 2;
-                const isTop = y < GRID_SIZE / 2;
-                if (isLeft && isTop) {
-                    teamIndex = 0;
-                } else if (!isLeft && isTop) {
-                    teamIndex = 2;
-                } else if (isLeft && !isTop) {
-                    teamIndex = 3;
-                } else {
-                    teamIndex = 1;
-                }
-            } else {
-                teamIndex = x < GRID_SIZE / 2 ? 0 : 1;
-            }
+            // Divide grid into sectors based on angle from center
+            const centerX = GRID_SIZE / 2;
+            const centerY = GRID_SIZE / 2;
+            const angle = Math.atan2(y - centerY + 0.5, x - centerX + 0.5);
+            const normalizedAngle = (angle + Math.PI) / (2 * Math.PI); // 0 to 1
+            const teamIndex = Math.floor(normalizedAngle * numTeams) % numTeams;
+
             grid[y][x] = teamIndex;
 
             // Create mesh for this cell
@@ -108,45 +104,30 @@ function initBalls() {
     ballMeshes = [];
     balls = [];
 
-    // Left ball
-    balls.push({
-        x: BALL_RADIUS + 10,
-        y: CANVAS_SIZE / 2,
-        vx: BALL_SPEED,
-        vy: BALL_SPEED * (Math.random() - 0.5) * 2,
-        team: 0,
-        bounceEdge: 'left'
-    });
+    const centerX = CANVAS_SIZE / 2;
+    const centerY = CANVAS_SIZE / 2;
+    const spawnRadius = CANVAS_SIZE / 2 - BALL_RADIUS - 20;
 
-    // Right ball
-    balls.push({
-        x: CANVAS_SIZE - BALL_RADIUS - 10,
-        y: CANVAS_SIZE / 2,
-        vx: -BALL_SPEED,
-        vy: BALL_SPEED * (Math.random() - 0.5) * 2,
-        team: 1,
-        bounceEdge: 'right'
-    });
+    // Create one ball per team at the edge of their sector
+    for (let i = 0; i < numTeams; i++) {
+        const angle = (i / numTeams) * Math.PI * 2 - Math.PI + (Math.PI / numTeams);
+        const x = centerX + Math.cos(angle) * spawnRadius;
+        const y = centerY + Math.sin(angle) * spawnRadius;
 
-    if (fourSidedMode) {
-        // Top ball
+        // Velocity points inward with some randomness
+        const vx = -Math.cos(angle) * BALL_SPEED + (Math.random() - 0.5) * 2;
+        const vy = -Math.sin(angle) * BALL_SPEED + (Math.random() - 0.5) * 2;
+
+        // Normalize velocity
+        const speed = Math.sqrt(vx * vx + vy * vy);
+
         balls.push({
-            x: CANVAS_SIZE / 2,
-            y: BALL_RADIUS + 10,
-            vx: BALL_SPEED * (Math.random() - 0.5) * 2,
-            vy: BALL_SPEED,
-            team: 2,
-            bounceEdge: 'top'
-        });
-
-        // Bottom ball
-        balls.push({
-            x: CANVAS_SIZE / 2,
-            y: CANVAS_SIZE - BALL_RADIUS - 10,
-            vx: BALL_SPEED * (Math.random() - 0.5) * 2,
-            vy: -BALL_SPEED,
-            team: 3,
-            bounceEdge: 'bottom'
+            x: x,
+            y: y,
+            vx: (vx / speed) * BALL_SPEED,
+            vy: (vy / speed) * BALL_SPEED,
+            team: i,
+            spawnAngle: angle
         });
     }
 
@@ -166,51 +147,22 @@ function updateBall(ball, index) {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    // Wall bouncing based on which edge the ball belongs to
-    if (ball.bounceEdge === 'left') {
-        if (ball.x - BALL_RADIUS < 0) {
-            ball.x = BALL_RADIUS;
-            ball.vx = Math.abs(ball.vx);
-        }
-    } else if (ball.bounceEdge === 'right') {
-        if (ball.x + BALL_RADIUS > CANVAS_SIZE) {
-            ball.x = CANVAS_SIZE - BALL_RADIUS;
-            ball.vx = -Math.abs(ball.vx);
-        }
-    } else if (ball.bounceEdge === 'top') {
-        if (ball.y - BALL_RADIUS < 0) {
-            ball.y = BALL_RADIUS;
-            ball.vy = Math.abs(ball.vy);
-        }
-    } else if (ball.bounceEdge === 'bottom') {
-        if (ball.y + BALL_RADIUS > CANVAS_SIZE) {
-            ball.y = CANVAS_SIZE - BALL_RADIUS;
-            ball.vy = -Math.abs(ball.vy);
-        }
+    // Wall bouncing - all balls bounce off all edges
+    if (ball.x - BALL_RADIUS < 0) {
+        ball.x = BALL_RADIUS;
+        ball.vx = Math.abs(ball.vx);
     }
-
-    // Top/bottom wall bouncing for left/right balls
-    if (ball.bounceEdge === 'left' || ball.bounceEdge === 'right') {
-        if (ball.y - BALL_RADIUS < 0) {
-            ball.y = BALL_RADIUS;
-            ball.vy = Math.abs(ball.vy);
-        }
-        if (ball.y + BALL_RADIUS > CANVAS_SIZE) {
-            ball.y = CANVAS_SIZE - BALL_RADIUS;
-            ball.vy = -Math.abs(ball.vy);
-        }
+    if (ball.x + BALL_RADIUS > CANVAS_SIZE) {
+        ball.x = CANVAS_SIZE - BALL_RADIUS;
+        ball.vx = -Math.abs(ball.vx);
     }
-
-    // Left/right wall bouncing for top/bottom balls
-    if (ball.bounceEdge === 'top' || ball.bounceEdge === 'bottom') {
-        if (ball.x - BALL_RADIUS < 0) {
-            ball.x = BALL_RADIUS;
-            ball.vx = Math.abs(ball.vx);
-        }
-        if (ball.x + BALL_RADIUS > CANVAS_SIZE) {
-            ball.x = CANVAS_SIZE - BALL_RADIUS;
-            ball.vx = -Math.abs(ball.vx);
-        }
+    if (ball.y - BALL_RADIUS < 0) {
+        ball.y = BALL_RADIUS;
+        ball.vy = Math.abs(ball.vy);
+    }
+    if (ball.y + BALL_RADIUS > CANVAS_SIZE) {
+        ball.y = CANVAS_SIZE - BALL_RADIUS;
+        ball.vy = -Math.abs(ball.vy);
     }
 
     // Check collision with cells
@@ -319,13 +271,13 @@ function stopPowerupTimer() {
     removeAllPowerups();
 }
 
-function addBall(team, bounceEdge, spawnX, spawnY) {
+function addBall(team, spawnX, spawnY) {
     // Random angle
     const angle = Math.random() * Math.PI * 2;
     const vx = Math.cos(angle) * BALL_SPEED;
     const vy = Math.sin(angle) * BALL_SPEED;
 
-    const ball = { x: spawnX, y: spawnY, vx, vy, team, bounceEdge };
+    const ball = { x: spawnX, y: spawnY, vx, vy, team };
     balls.push(ball);
 
     const mesh = new THREE.Mesh(ballGeometry, ballMaterial);
@@ -356,7 +308,7 @@ function checkPowerupCollision(ball) {
             // Ball hit the powerup - spawn new ball of same type at powerup location
             const spawnX = powerup.cellX * CELL_SIZE + CELL_SIZE / 2;
             const spawnY = powerup.cellY * CELL_SIZE + CELL_SIZE / 2;
-            addBall(ball.team, ball.bounceEdge, spawnX, spawnY);
+            addBall(ball.team, spawnX, spawnY);
             scene.remove(powerup.mesh);
             powerups.splice(i, 1);
         }
@@ -364,7 +316,7 @@ function checkPowerupCollision(ball) {
 }
 
 function countCells() {
-    const counts = [0, 0, 0, 0];
+    const counts = new Array(8).fill(0);
     for (let y = 0; y < GRID_SIZE; y++) {
         for (let x = 0; x < GRID_SIZE; x++) {
             counts[grid[y][x]]++;
@@ -374,7 +326,7 @@ function countCells() {
 }
 
 function countBalls() {
-    const counts = [0, 0, 0, 0];
+    const counts = new Array(8).fill(0);
     balls.forEach(ball => counts[ball.team]++);
     return counts;
 }
@@ -382,11 +334,10 @@ function countBalls() {
 function updateScores() {
     const cellCounts = countCells();
     const ballCounts = countBalls();
-    const numColors = fourSidedMode ? 4 : 2;
     const totalCells = GRID_SIZE * GRID_SIZE;
 
     scoresDiv.innerHTML = '';
-    for (let i = 0; i < numColors; i++) {
+    for (let i = 0; i < numTeams; i++) {
         const percentage = (cellCounts[i] / totalCells) * 100;
 
         const healthBar = document.createElement('div');
@@ -434,7 +385,10 @@ function reset() {
 }
 
 // Event listeners
-fourSidedCheckbox.addEventListener('change', reset);
+teamsSlider.addEventListener('input', () => {
+    teamsValue.textContent = teamsSlider.value;
+});
+teamsSlider.addEventListener('change', reset);
 powerupsCheckbox.addEventListener('change', reset);
 powerupIntervalInput.addEventListener('change', () => {
     if (powerupsEnabled) {
