@@ -92,7 +92,7 @@ const materials = COLORS.map(color => new THREE.MeshBasicMaterial({ color }));
 const ballMaterial = new THREE.MeshBasicMaterial({ color: BALL_COLOR });
 
 // Create powerup textures with symbols and borders
-function createPowerupTexture(bgColor, symbol) {
+function createPowerupTexture(bgColor) {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 64;
@@ -107,12 +107,11 @@ function createPowerupTexture(bgColor, symbol) {
     ctx.lineWidth = 4;
     ctx.strokeRect(4, 4, 56, 56);
 
-    // Symbol
+    // Ball symbol
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 48px "Press Start 2P", monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(symbol, 32, 36);
+    ctx.beginPath();
+    ctx.arc(32, 32, 16, 0, Math.PI * 2);
+    ctx.fill();
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.minFilter = THREE.NearestFilter;
@@ -121,7 +120,7 @@ function createPowerupTexture(bgColor, symbol) {
 }
 
 const powerupMaterial = new THREE.MeshBasicMaterial({
-    map: createPowerupTexture('#ffd700', '+')
+    map: createPowerupTexture('#ffd700')
 });
 
 // Geometries
