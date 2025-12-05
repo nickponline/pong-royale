@@ -33,7 +33,7 @@ let powerups = []; // [{ cellX, cellY, mesh }, ...]
 
 // Three.js setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x667eea);
+scene.background = new THREE.Color(0x000000);
 
 const camera = new THREE.OrthographicCamera(
     0, CANVAS_SIZE,
@@ -373,17 +373,41 @@ function countCells() {
     return counts;
 }
 
+function countBalls() {
+    const counts = [0, 0, 0, 0];
+    balls.forEach(ball => counts[ball.team]++);
+    return counts;
+}
+
 function updateScores() {
-    const counts = countCells();
+    const cellCounts = countCells();
+    const ballCounts = countBalls();
     const numColors = fourSidedMode ? 4 : 2;
+    const totalCells = GRID_SIZE * GRID_SIZE;
 
     scoresDiv.innerHTML = '';
     for (let i = 0; i < numColors; i++) {
-        const scoreEl = document.createElement('span');
-        scoreEl.className = 'score';
-        scoreEl.style.backgroundColor = COLOR_HEX[i];
-        scoreEl.textContent = `${COLOR_NAMES[i]}: ${counts[i]}`;
-        scoresDiv.appendChild(scoreEl);
+        const percentage = (cellCounts[i] / totalCells) * 100;
+
+        const healthBar = document.createElement('div');
+        healthBar.className = 'health-bar';
+
+        const label = document.createElement('div');
+        label.className = 'health-bar-label';
+        label.textContent = `${COLOR_NAMES[i]} (${ballCounts[i]})`;
+
+        const track = document.createElement('div');
+        track.className = 'health-bar-track';
+
+        const fill = document.createElement('div');
+        fill.className = 'health-bar-fill';
+        fill.style.width = `${percentage}%`;
+        fill.style.backgroundColor = COLOR_HEX[i];
+
+        track.appendChild(fill);
+        healthBar.appendChild(label);
+        healthBar.appendChild(track);
+        scoresDiv.appendChild(healthBar);
     }
 }
 

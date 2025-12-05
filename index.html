@@ -3,8 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Breakout Battle</title>
+    <title>Pong Royale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 4px 4px 0px #667eea;
+        }
         * {
             margin: 0;
             padding: 0;
@@ -16,12 +24,12 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000000;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
         }
         .controls {
-            margin-bottom: 20px;
+            margin-top: 20px;
             display: flex;
             gap: 15px;
             align-items: center;
@@ -59,24 +67,49 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             overflow: hidden;
         }
-        #scores {
-            margin-top: 15px;
-            display: flex;
-            gap: 20px;
-            font-size: 14px;
-            font-weight: bold;
+        .game-wrapper {
+            position: relative;
         }
-        .score {
-            padding: 8px 16px;
-            border-radius: 6px;
-            color: #222;
-            min-width: 110px;
-            text-align: center;
-            font-variant-numeric: tabular-nums;
+        #scores {
+            position: absolute;
+            left: calc(100% + 20px);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+        }
+        .health-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .health-bar-label {
+            color: white;
+            text-shadow: 1px 1px 0px #000;
+        }
+        .health-bar-track {
+            width: 150px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .health-bar-fill {
+            height: 100%;
+            transition: width 0.1s ease-out;
         }
     </style>
 </head>
 <body>
+    <h1>Pong Royale</h1>
+    <div class="game-wrapper">
+        <div id="container"></div>
+        <div id="scores"></div>
+    </div>
     <div class="controls">
         <label>
             <input type="checkbox" id="fourSided">
@@ -92,8 +125,6 @@
         </label>
         <button id="reset">Reset</button>
     </div>
-    <div id="container"></div>
-    <div id="scores"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="game.js"></script>
 </body>
