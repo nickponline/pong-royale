@@ -109,10 +109,10 @@ function createPowerupTexture(bgColor, symbol) {
 
     // Symbol
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 32px "Press Start 2P", monospace';
+    ctx.font = 'bold 48px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(symbol, 32, 34);
+    ctx.fillText(symbol, 32, 36);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.minFilter = THREE.NearestFilter;
