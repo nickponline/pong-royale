@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "deploymentProtection": {
-    "preview": "none",
-    "prod": "none"
-  }
-}
