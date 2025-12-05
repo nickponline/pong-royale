@@ -91,8 +91,42 @@ let balls = [];
 // Materials cache
 const materials = COLORS.map(color => new THREE.MeshBasicMaterial({ color }));
 const ballMaterial = new THREE.MeshBasicMaterial({ color: BALL_COLOR });
-const powerupMaterial = new THREE.MeshBasicMaterial({ color: POWERUP_COLOR });
-const freezePowerupMaterial = new THREE.MeshBasicMaterial({ color: FREEZE_POWERUP_COLOR });
+
+// Create powerup textures with symbols and borders
+function createPowerupTexture(bgColor, symbol) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, 64, 64);
+
+    // Border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(4, 4, 56, 56);
+
+    // Symbol
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 32px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(symbol, 32, 34);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.NearestFilter;
+    texture.magFilter = THREE.NearestFilter;
+    return texture;
+}
+
+const powerupMaterial = new THREE.MeshBasicMaterial({
+    map: createPowerupTexture('#ffd700', '+')
+});
+const freezePowerupMaterial = new THREE.MeshBasicMaterial({
+    map: createPowerupTexture('#00ffff', '||')
+});
 
 // Geometries
 const cellGeometry = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE);
