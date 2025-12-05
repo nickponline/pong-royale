@@ -36,6 +36,35 @@ let powerupsEnabled = false;
 let powerupTimer = null;
 let powerups = []; // [{ cellX, cellY, mesh }, ...]
 
+// Audio setup
+let audioContext = null;
+
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+}
+
+function playHitSound() {
+    if (!audioContext) return;
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(220, audioContext.currentTime + 0.05);
+
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.05);
+}
+
 // Three.js setup
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
@@ -203,6 +232,7 @@ function checkCellCollision(ball) {
                     // Convert cell
                     grid[cellY][cellX] = ball.team;
                     cellMeshes[cellY][cellX].material = materials[ball.team];
+                    playHitSound();
 
                     // Bounce
                     const overlapX = BALL_RADIUS - Math.abs(distX);
@@ -396,6 +426,10 @@ powerupIntervalInput.addEventListener('change', () => {
     }
 });
 resetButton.addEventListener('click', reset);
+
+// Initialize audio on first user interaction
+document.addEventListener('click', initAudio, { once: true });
+document.addEventListener('keydown', initAudio, { once: true });
 
 // Initialize and start
 reset();
