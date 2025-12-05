@@ -20,7 +20,8 @@ const COLORS = [
 ];
 
 const BALL_COLOR = 0x222222;
-const POWERUP_COLOR = 0xffd700; // Gold
+const POWERUP_COLOR = 0xffd700; // Gold - spawn ball
+const FREEZE_POWERUP_COLOR = 0x00ffff; // Cyan - freeze others
 
 const COLOR_NAMES = ['Cream', 'Teal', 'Coral', 'Sage', 'Purple', 'Pink', 'Sky', 'Yellow'];
 const COLOR_HEX = ['#e8e4df', '#3d5a6c', '#e07a5f', '#81b29a', '#9b5de5', '#f15bb5', '#00bbf9', '#fee440'];
@@ -91,6 +92,7 @@ let balls = [];
 const materials = COLORS.map(color => new THREE.MeshBasicMaterial({ color }));
 const ballMaterial = new THREE.MeshBasicMaterial({ color: BALL_COLOR });
 const powerupMaterial = new THREE.MeshBasicMaterial({ color: POWERUP_COLOR });
+const freezePowerupMaterial = new THREE.MeshBasicMaterial({ color: FREEZE_POWERUP_COLOR });
 
 // Geometries
 const cellGeometry = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE);
@@ -157,7 +159,8 @@ function initBalls() {
             vx: (vx / speed) * BALL_SPEED,
             vy: (vy / speed) * BALL_SPEED,
             team: i,
-            spawnAngle: angle
+            spawnAngle: angle,
+            frozen: false
         });
     }
 
@@ -173,6 +176,9 @@ function initBalls() {
 }
 
 function updateBall(ball, index) {
+    // Skip frozen balls
+    if (ball.frozen) return;
+
     // Move ball
     ball.x += ball.vx;
     ball.y += ball.vy;
@@ -268,13 +274,17 @@ function spawnPowerup() {
     const cellX = Math.floor(Math.random() * GRID_SIZE);
     const cellY = Math.floor(Math.random() * GRID_SIZE);
 
-    const mesh = new THREE.Mesh(powerupGeometry, powerupMaterial);
+    // Randomly choose powerup type: 'spawn' or 'freeze'
+    const type = Math.random() < 0.5 ? 'spawn' : 'freeze';
+    const material = type === 'spawn' ? powerupMaterial : freezePowerupMaterial;
+
+    const mesh = new THREE.Mesh(powerupGeometry, material);
     mesh.position.x = cellX * CELL_SIZE + CELL_SIZE / 2;
     mesh.position.y = -(cellY * CELL_SIZE + CELL_SIZE / 2);
     mesh.position.z = 0.5; // Above cells but below balls
     scene.add(mesh);
 
-    powerups.push({ cellX, cellY, mesh });
+    powerups.push({ cellX, cellY, mesh, type });
 }
 
 function removeAllPowerups() {
@@ -308,7 +318,7 @@ function addBall(team, spawnX, spawnY) {
     const vx = Math.cos(angle) * BALL_SPEED;
     const vy = Math.sin(angle) * BALL_SPEED;
 
-    const ball = { x: spawnX, y: spawnY, vx, vy, team };
+    const ball = { x: spawnX, y: spawnY, vx, vy, team, frozen: false };
     balls.push(ball);
 
     const mesh = new THREE.Mesh(ballGeometry, ballMaterial);
@@ -317,6 +327,28 @@ function addBall(team, spawnX, spawnY) {
     mesh.position.z = 1;
     scene.add(mesh);
     ballMeshes.push(mesh);
+}
+
+function freezeOtherBalls(exemptTeam) {
+    balls.forEach((ball, index) => {
+        if (ball.team !== exemptTeam) {
+            ball.frozen = true;
+            // Visual feedback - make frozen balls semi-transparent
+            ballMeshes[index].material = ballMeshes[index].material.clone();
+            ballMeshes[index].material.opacity = 0.4;
+            ballMeshes[index].material.transparent = true;
+        }
+    });
+
+    // Unfreeze after 10 seconds
+    setTimeout(() => {
+        balls.forEach((ball, index) => {
+            if (ball.frozen) {
+                ball.frozen = false;
+                ballMeshes[index].material = ballMaterial;
+            }
+        });
+    }, 10000);
 }
 
 function checkPowerupCollision(ball) {
@@ -336,10 +368,15 @@ function checkPowerupCollision(ball) {
         const distance = Math.sqrt(distX * distX + distY * distY);
 
         if (distance < BALL_RADIUS) {
-            // Ball hit the powerup - spawn new ball of same type at powerup location
-            const spawnX = powerup.cellX * CELL_SIZE + CELL_SIZE / 2;
-            const spawnY = powerup.cellY * CELL_SIZE + CELL_SIZE / 2;
-            addBall(ball.team, spawnX, spawnY);
+            if (powerup.type === 'spawn') {
+                // Spawn new ball of same team at powerup location
+                const spawnX = powerup.cellX * CELL_SIZE + CELL_SIZE / 2;
+                const spawnY = powerup.cellY * CELL_SIZE + CELL_SIZE / 2;
+                addBall(ball.team, spawnX, spawnY);
+            } else if (powerup.type === 'freeze') {
+                // Freeze all balls of other teams for 10 seconds
+                freezeOtherBalls(ball.team);
+            }
             scene.remove(powerup.mesh);
             powerups.splice(i, 1);
         }
