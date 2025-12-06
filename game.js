@@ -6,6 +6,13 @@ const powerupIntervalInput = document.getElementById('powerupInterval');
 const sfxCheckbox = document.getElementById('sfx');
 const resetButton = document.getElementById('reset');
 const scoresDiv = document.getElementById('scores');
+const diagnosticsDiv = document.getElementById('diagnostics');
+const showDiagnosticsCheckbox = document.getElementById('showDiagnostics');
+
+// FPS tracking
+let frameCount = 0;
+let lastFpsUpdate = performance.now();
+let currentFps = 0;
 
 // Colors - 8 distinct colors
 const COLORS = [
@@ -27,9 +34,9 @@ const COLOR_HEX = ['#e8e4df', '#3d5a6c', '#e07a5f', '#81b29a', '#9b5de5', '#f15b
 
 // Game settings
 const CANVAS_SIZE = 600;
-const GRID_SIZE = 20;
+const GRID_SIZE = 40;
 const CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
-const BALL_RADIUS = 8;
+const BALL_RADIUS = 6;
 const BALL_SPEED = 4;
 
 // Responsive canvas sizing
@@ -441,6 +448,29 @@ function updateScores() {
     }
 }
 
+function updateDiagnostics() {
+    const now = performance.now();
+    frameCount++;
+
+    if (now - lastFpsUpdate >= 1000) {
+        currentFps = frameCount;
+        frameCount = 0;
+        lastFpsUpdate = now;
+    }
+
+    if (showDiagnosticsCheckbox.checked) {
+        const info = renderer.info;
+        diagnosticsDiv.innerHTML =
+            `FPS: ${currentFps}<br>` +
+            `Balls: ${balls.length}<br>` +
+            `Cells: ${GRID_SIZE * GRID_SIZE}<br>` +
+            `Draw calls: ${info.render.calls}<br>` +
+            `Triangles: ${info.render.triangles}<br>` +
+            `Geometries: ${info.memory.geometries}<br>` +
+            `Textures: ${info.memory.textures}`;
+    }
+}
+
 function gameLoop() {
     balls.forEach((ball, index) => {
         updateBall(ball, index);
@@ -449,6 +479,7 @@ function gameLoop() {
         }
     });
     updateScores();
+    updateDiagnostics();
     renderer.render(scene, camera);
     requestAnimationFrame(gameLoop);
 }
@@ -475,6 +506,9 @@ powerupIntervalInput.addEventListener('change', () => {
     }
 });
 resetButton.addEventListener('click', reset);
+showDiagnosticsCheckbox.addEventListener('change', () => {
+    diagnosticsDiv.classList.toggle('visible', showDiagnosticsCheckbox.checked);
+});
 
 // Initialize audio on first user interaction
 document.addEventListener('click', initAudio, { once: true });
