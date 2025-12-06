@@ -32,6 +32,19 @@ const CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
 const BALL_RADIUS = 8;
 const BALL_SPEED = 4;
 
+// Responsive canvas sizing
+function getCanvasDisplaySize() {
+    const maxWidth = Math.min(window.innerWidth - 20, CANVAS_SIZE);
+    return maxWidth;
+}
+
+function updateCanvasSize() {
+    const displaySize = getCanvasDisplaySize();
+    renderer.setSize(CANVAS_SIZE, CANVAS_SIZE);
+    renderer.domElement.style.width = displaySize + 'px';
+    renderer.domElement.style.height = displaySize + 'px';
+}
+
 let numTeams = 2;
 let powerupsEnabled = false;
 let powerupTimer = null;
@@ -80,6 +93,10 @@ camera.position.z = 100;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(CANVAS_SIZE, CANVAS_SIZE);
 container.appendChild(renderer.domElement);
+
+// Apply responsive sizing
+updateCanvasSize();
+window.addEventListener('resize', updateCanvasSize);
 
 // Grid state
 let grid = [];
